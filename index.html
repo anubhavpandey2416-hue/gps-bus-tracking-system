@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MetroTrack GPS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="loginModal" class="modal visible">
+      <div class="login-card">
+        <div class="brand-block">
+          <div class="brand-icon">M</div>
+          <div>
+            <p class="eyebrow">Transit control</p>
+            <h1>MetroTrack</h1>
+          </div>
+        </div>
+
+        <h2>Admin login</h2>
+        <form id="loginForm" class="login-form">
+          <label>
+            Username
+            <input type="text" name="username" value="admin" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" value="admin123" required />
+          </label>
+          <button type="submit" class="primary-btn full-width">Sign in</button>
+        </form>
+        <p id="loginMessage" class="message-box" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-icon">M</div>
+          <div>
+            <p class="eyebrow">Transit control</p>
+            <h1>MetroTrack</h1>
+          </div>
+        </div>
+
+        <nav class="main-nav">
+          <button class="nav-item active" type="button"><span class="nav-icon">⌂</span><span>Overview</span></button>
+          <button class="nav-item" type="button"><span class="nav-icon">↗</span><span>Fleet</span></button>
+          <button class="nav-item" type="button"><span class="nav-icon">•</span><span>Routes</span></button>
+          <button class="nav-item" type="button"><span class="nav-icon">⚑</span><span>Alerts</span></button>
+        </nav>
+
+        <div class="mini-panel">
+          <p class="panel-label">System status</p>
+          <div class="status-line"><span class="dot green"></span><span>Live tracking active</span></div>
+          <div class="status-line"><span class="dot yellow"></span><span>Operations dashboard online</span></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Operations dashboard</p>
+            <h2>Bus Tracking System</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="soft-btn" id="refreshBtn" type="button">Refresh</button>
+            <button class="primary-btn" id="logoutBtn" type="button">Admin logout</button>
+          </div>
+        </header>
+
+        <section class="stats-grid">
+          <article class="stat-card accent-blue">
+            <p>Active buses</p>
+            <div class="stat-value" id="activeBuses">0</div>
+            <span class="stat-foot">Across live network</span>
+          </article>
+          <article class="stat-card accent-green">
+            <p>On-time rate</p>
+            <div class="stat-value" id="onTimeRate">0%</div>
+            <span class="stat-foot">Last updates</span>
+          </article>
+          <article class="stat-card accent-gold">
+            <p>Average speed</p>
+            <div class="stat-value" id="avgSpeed">0 km/h</div>
+            <span class="stat-foot">City network speed</span>
+          </article>
+          <article class="stat-card accent-red">
+            <p>Alerts</p>
+            <div class="stat-value" id="alertCount">00</div>
+            <span class="stat-foot">Delayed routes</span>
+          </article>
+        </section>
+
+        <section class="main-grid">
+          <div class="map-panel">
+            <div class="panel-header">
+              <h3>Fleet map</h3>
+              <div class="legend">
+                <span><i class="legend-swatch on-time"></i> On time</span>
+                <span><i class="legend-swatch delayed"></i> Delayed</span>
+              </div>
+            </div>
+            <div id="map" aria-label="Bus tracking map"></div>
+          </div>
+
+          <aside class="detail-panel">
+            <div class="panel-header">
+              <h3>Selected route</h3>
+              <span id="selectedRouteBadge" class="pill">Live</span>
+            </div>
+            <div id="routeSummary" class="route-summary"></div>
+            <ul id="routeStopsList" class="route-stops"></ul>
+          </aside>
+        </section>
+
+        <section id="adminPanel" class="admin-panel hidden">
+          <div class="panel-header">
+            <h3>Route & fleet management</h3>
+          </div>
+          <div class="admin-grid">
+            <form id="routeForm" class="admin-form">
+              <h4>Create route</h4>
+              <label>
+                Route name
+                <input type="text" name="name" placeholder="Downtown Express" required />
+              </label>
+              <div class="two-col">
+                <label>
+                  Start stop
+                  <input type="text" name="startStop" placeholder="Union Station" required />
+                </label>
+                <label>
+                  End stop
+                  <input type="text" name="endStop" placeholder="City Hall" required />
+                </label>
+              </div>
+              <label>
+                Color
+                <input type="color" name="color" value="#5aa8ff" />
+              </label>
+              <label>
+                Coordinates
+                <textarea name="coordinates" rows="5" placeholder="40.7128, -74.0060&#10;40.7200, -73.9970&#10;40.7300, -73.9890" required></textarea>
+              </label>
+              <button type="submit" class="primary-btn full-width">Save route</button>
+            </form>
+
+            <form id="busForm" class="admin-form">
+              <h4>Add bus</h4>
+              <div class="two-col">
+                <label>
+                  Plate
+                  <input type="text" name="plate" placeholder="BUS-119" required />
+                </label>
+                <label>
+                  Driver
+                  <input type="text" name="driver" placeholder="Jordan Miles" required />
+                </label>
+              </div>
+              <label>
+                Route
+                <select name="routeId" id="routeSelect" required></select>
+              </label>
+              <div class="two-col">
+                <label>
+                  Latitude
+                  <input type="number" step="0.0001" name="latitude" placeholder="40.7128" required />
+                </label>
+                <label>
+                  Longitude
+                  <input type="number" step="0.0001" name="longitude" placeholder="-74.0060" required />
+                </label>
+              </div>
+              <div class="two-col">
+                <label>
+                  Speed
+                  <input type="number" step="0.1" name="speed" placeholder="32.5" required />
+                </label>
+                <label>
+                  Status
+                  <select name="status">
+                    <option value="On time">On time</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Scheduled">Scheduled</option>
+                  </select>
+                </label>
+              </div>
+              <button type="submit" class="primary-btn full-width">Add bus</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="table-panel">
+          <div class="panel-header">
+            <h3>Live fleet status</h3>
+            <div class="table-actions"><button class="soft-btn small" type="button" id="tableRefreshBtn">Refresh</button></div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Bus</th>
+                <th>Route</th>
+                <th>Driver</th>
+                <th>Speed</th>
+                <th>Status</th>
+                <th>Last update</th>
+              </tr>
+            </thead>
+            <tbody id="fleetTableBody"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="app.js"></script>
+  </body>
+</html>

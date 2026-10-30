@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.env
+
+data/*.db
+*.sqlite
+*.sqlite3
+
+git-status.txt
+gh-auth.txt
